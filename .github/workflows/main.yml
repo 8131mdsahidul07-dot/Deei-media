@@ -1,0 +1,49 @@
+name: Build Deen Media APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          if [ -f "দ্বীন-মিডিয়া.zip" ]; then
+            unzip -o "দ্বীন-মিডিয়া.zip" -d project
+          else
+            mkdir -p project
+            cp -r . project/
+          fi
+
+      - name: Find Android project
+        run: |
+          echo "Searching for Gradle project..."
+          find project -name gradlew -type f | head -20
+
+      - name: Build APK
+        run: |
+          GRADLEW=$(find project -name gradlew -type f | head -1)
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: Android Gradle project not found."
+            exit 1
+          fi
+
+          cd "$(dirname "$GRADLEW")"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Deen-Media-APK
+          path: |
+            project/**/build/outputs/apk/**/*.apk
+            project/**/build/outputs/apk/**/*.apk
